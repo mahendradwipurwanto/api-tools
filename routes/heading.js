@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var axios = require('axios');
 var cheerio = require('cheerio');
-var buildHeadingStructure = require('../libs/heading');
+var {buildHeadingStructure, restructureHeadingsDynamic, countHeadings} = require('../libs/heading');
 
 /* GET return a JSON response */
 router.get('/', async function (req, res, next) {
@@ -20,11 +20,19 @@ router.get('/', async function (req, res, next) {
         // Get all heading elements (h1 to h6)
         const headings = $('h1, h2, h3, h4, h5, h6');
 
-        const structure = buildHeadingStructure($, headings);
+        let structure = buildHeadingStructure($, headings);
+
+        // based on headings, count how much of each type of heading there is on structure
+        const headingCount = countHeadings(structure);
+
+        // restructure
+        structure = restructureHeadingsDynamic(structure);
+
 
         res.json({
             status: 'ok',
             data: {
+                summary: headingCount,
                 structure,
             },
         });
