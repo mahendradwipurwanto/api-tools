@@ -30,7 +30,7 @@ function restructureHeadingsDynamic(structure) {
         }
 
         const expectedLevel = stack.length > 0 ? stack[stack.length - 1].level + 1 : 1;
-        const newItem = { ...item, child: [], message: null };
+        const newItem = {...item, child: [], message: null};
 
         if (level !== expectedLevel) {
             // If the current level is not the expected level, add a message
@@ -46,7 +46,7 @@ function restructureHeadingsDynamic(structure) {
         }
 
         // Add this item to the stack
-        stack.push({ level, item: newItem });
+        stack.push({level, item: newItem});
     });
 
     // Post-process: Set 'child' to null if there are no children
@@ -64,7 +64,7 @@ function restructureHeadingsDynamic(structure) {
 }
 
 function countHeadings(structure) {
-    const summary = { h1: 0, h2: 0, h3: 0, h4: 0, h5: 0, h6: 0 };
+    const summary = {h1: 0, h2: 0, h3: 0, h4: 0, h5: 0, h6: 0};
 
     structure.forEach(item => {
         const headingType = item.type;
@@ -76,8 +76,30 @@ function countHeadings(structure) {
     return summary;
 }
 
+async function injectFontSize(page, structure) {
+    for (let item of structure) {
+        const selector = item.type;
+        // Get the font-size of the element
+        item.fontSize = await page.evaluate((selector) => {
+            const element = document.querySelector(selector);
+            if (element) {
+                return window.getComputedStyle(element).fontSize;
+            }
+            return null;
+        }, selector);
+
+        // If the heading has children, recursively add font sizes to them as well
+        if (item.child && Array.isArray(item.child)) {
+            await injectFontSize(page, item.child);
+        }
+    }
+    return structure;
+}
+
+
 module.exports = {
     buildHeadingStructure,
     restructureHeadingsDynamic,
-    countHeadings
+    countHeadings,
+    injectFontSize
 };

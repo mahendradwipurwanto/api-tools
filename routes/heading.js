@@ -2,7 +2,8 @@ var express = require('express');
 var router = express.Router();
 var axios = require('axios');
 var cheerio = require('cheerio');
-var {buildHeadingStructure, restructureHeadingsDynamic, countHeadings} = require('../libs/heading');
+var puppeteer = require('puppeteer');
+var {buildHeadingStructure, restructureHeadingsDynamic, countHeadings, injectFontSize} = require('../libs/heading');
 
 /* GET return a JSON response */
 router.get('/', async function (req, res, next) {
@@ -25,9 +26,20 @@ router.get('/', async function (req, res, next) {
         // based on headings, count how much of each type of heading there is on structure
         const headingCount = countHeadings(structure);
 
+        // Launch Puppeteer
+        const browser = await puppeteer.launch();
+        const page = await browser.newPage();
+
+        // Navigate to the URL
+        await page.goto(url, { waitUntil: 'networkidle2' });
+
         // restructure
         structure = restructureHeadingsDynamic(structure);
 
+        // Inject font size into the structure
+        structure = await injectFontSize(page, structure);
+
+        await browser.close(); // Close Puppeteer browser instance
 
         res.json({
             status: 'ok',
