@@ -1,7 +1,6 @@
 const buildHeadingStructure = ($, parent) => {
     const result = [];
     parent.each((index, element) => {
-        console.log("element", element);
         const type = element.tagName;
         const text = $(element).text().trim();
         // count the number of characters in the text withou spaces
@@ -63,6 +62,26 @@ function restructureHeadingsDynamic(structure) {
     return result;
 }
 
+async function injectFontSize(page, structure) {
+    for (let item of structure) {
+        const selector = item.type;
+        // Get the font-size of the element
+        item.fontSize = await page.evaluate((selector) => {
+            const element = document.querySelector(selector);
+            if (element) {
+                return window.getComputedStyle(element).fontSize;
+            }
+            return null;
+        }, selector);
+
+        // If the heading has children, recursively add font sizes to them as well
+        if (item.child && Array.isArray(item.child)) {
+            await injectFontSize(page, item.child);
+        }
+    }
+    return structure;
+}
+
 function countHeadings(structure) {
     const summary = { h1: 0, h2: 0, h3: 0, h4: 0, h5: 0, h6: 0 };
 
@@ -79,5 +98,6 @@ function countHeadings(structure) {
 module.exports = {
     buildHeadingStructure,
     restructureHeadingsDynamic,
-    countHeadings
+    countHeadings,
+    injectFontSize
 };
