@@ -33,7 +33,7 @@ function restructureHeadingsDynamic(structure) {
 
         if (level !== expectedLevel) {
             // If the current level is not the expected level, add a message
-            newItem.message = `${item.type} found, expected h${expectedLevel}`;
+            newItem.message = `h${expectedLevel} found, expected ${item.type} `;
         }
 
         if (stack.length === 0) {
